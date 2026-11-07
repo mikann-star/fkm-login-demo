@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>桌台历史订单 · FKM 商家端</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink:#30376a; --muted:#69738d; --line:#e9edf5; --surface:#f6f8fc;
+    --brand:#5434f5; --tint:#f0ecff; --danger:#c83944;
+    font:14px/1.5 "Segoe UI","Microsoft YaHei",sans-serif;
+  }
+  * { box-sizing:border-box }
+  body { margin:0; color:var(--ink); background:#f4f6fb }
+  button { font:inherit; color:inherit }
+  button { cursor:pointer }
+  button:focus-visible,[tabindex]:focus-visible { outline:2px solid var(--brand); outline-offset:3px }
+  button:disabled { opacity:.45; cursor:default }
+  h1,h2,h3,p { margin:0 }
+  svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; vertical-align:middle; flex:none }
+  .shell { display:grid; grid-template-columns:192px 1fr; min-height:100vh }
+  aside { background:white; border-right:1px solid var(--line); padding:26px 14px }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:750; margin:0 8px 35px }
+  .logo b { background:var(--brand); color:white; border-radius:10px; padding:8px }
+  .nav { padding:12px 14px; margin:6px 0; border-radius:8px; color:var(--muted) }
+  .nav.active { color:var(--brand); background:var(--tint); font-weight:650 }
+  main { padding:30px }
+  .floor { display:grid; grid-template-columns:repeat(auto-fit,minmax(138px,1fr)); gap:16px; margin-top:24px }
+  .tile { text-align:left; background:white; border:1px solid var(--line); border-radius:14px; min-height:118px; padding:16px }
+  .tile strong { display:block; font-size:19px; margin-bottom:12px }
+  .tile.busy { background:#3663dc; color:white }
+  .tile:disabled { opacity:1 }
+  dialog { border:0; color:inherit; background:white; padding:0 }
+  dialog::backdrop { background:#191e2d73; backdrop-filter:blur(3px) }
+  #desk { width:min(1140px,calc(100% - 48px)); max-width:none; height:min(810px,calc(100dvh - 64px)); max-height:none; border-radius:16px; box-shadow:0 24px 80px #19203932; overflow:hidden }
+  .desk-frame { height:100%; display:flex; flex-direction:column }
+  .desk-head { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:21px 26px 13px }
+  .desk-head h1 { font-size:25px; white-space:nowrap }
+  .head-group,.tabs,.toolbar,.detail-head,.detail-title,.actions,.child-head,.receipt-actions { display:flex; align-items:center; gap:12px }
+  .state { color:#3666df; font-weight:650; white-space:nowrap }
+  .state::before { content:""; display:inline-block; width:9px; height:9px; margin-right:6px; background:currentColor; border-radius:50% }
+  .state.idle { color:#65738e }
+  .close { border:0; background:transparent; color:var(--muted); font-size:23px; padding:1px 8px; border-radius:6px }
+  .close:hover { background:var(--surface) }
+  .tabs { gap:26px; margin:0 24px; border-bottom:1px solid var(--line); overflow-x:auto }
+  .tab { display:flex; align-items:center; gap:6px; padding:12px 0; white-space:nowrap; color:var(--muted) }
+  button.tab { border:0; border-bottom:2px solid transparent; background:none }
+  .tab.active { color:var(--brand); border-bottom:2px solid var(--brand); font-weight:700 }
+  .content { overflow:auto; flex:1; min-height:0; padding:23px 25px; background:var(--surface); scrollbar-gutter:stable }
+  .detail-head { flex-wrap:wrap; margin-bottom:16px }
+  .detail-head > .button { margin-inline-start:auto }
+  .detail-title { gap:8px; flex-wrap:wrap; font-size:14px }
+  .detail-title h2 { font-size:inherit }
+  .detail-title .separator { color:var(--muted) }
+  .card { background:white; border:1px solid var(--line); border-radius:13px; overflow:hidden }
+  .order-list { display:flex; flex-direction:column; max-height:100%; overflow:visible }
+  .order-list > :not(.results) { flex:none }
+  .toolbar { flex-wrap:wrap; padding:15px 17px }
+  .date-filter { display:flex; align-items:center; gap:12px; max-width:100% }
+  .date-label { font-weight:650; white-space:nowrap }
+  .date-picker { position:relative; min-width:0 }
+  .date-trigger { display:flex; align-items:center; justify-content:space-between; gap:clamp(6px,2vw,20px); padding:10px 13px; border:1px solid var(--line); border-radius:12px; background:white; white-space:nowrap; font-variant-numeric:tabular-nums }
+  .date-trigger:hover,.date-trigger[aria-expanded=true] { border-color:#b9aaff }
+  .date-trigger svg { color:var(--brand); margin-left:4px }
+  .date-arrow { color:#8790a4 }
+  .calendar { position:absolute; z-index:3; top:calc(100% + 6px); left:0; width:min(290px,calc(100vw - 78px)); padding:12px; border:1px solid var(--line); border-radius:12px; background:white; box-shadow:0 8px 24px #19203926 }
+  .calendar-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px }
+  .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); text-align:center; gap:2px }
+  .calendar-day { border:0; border-radius:5px; background:white; min-height:28px; padding:0 }
+  .calendar-day:hover,.calendar-day.in-range { background:var(--tint) }
+  .calendar-day.endpoint { color:white; background:var(--brand) }
+  .calendar-hint { color:var(--muted); font-size:12px; margin-top:7px }
+  .button { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:7px 11px; background:white; border:1px solid #dce1ed; border-radius:7px; white-space:nowrap }
+  .button:hover { background:var(--surface) }
+  .button.primary { color:white; background:var(--brand); border-color:var(--brand) }
+  .button.primary:hover { background:#4628dc }
+  .button svg { width:16px; height:16px }
+  .link { color:var(--brand); background:none; border:0; padding:4px 0; white-space:nowrap }
+  .link:hover { text-decoration:underline }
+  .count { color:var(--muted); white-space:nowrap }
+  .results { min-height:0; overflow:auto; border-radius:0 0 13px 13px }
+  table { width:100%; border-collapse:collapse; text-align:left; white-space:nowrap }
+  th,td { padding:14px 14px; border-bottom:1px solid var(--line) }
+  th { position:sticky; top:0; z-index:1; background:#fafbfe; font-weight:650; color:#4f5878 }
+  tbody tr:hover { background:#faf9ff }
+  .number { font-variant-numeric:tabular-nums; font-weight:650 }
+  .row-number { width:1%; text-align:center; font-variant-numeric:tabular-nums }
+  td.row-number { color:var(--muted) }
+  .empty { padding:56px 16px; text-align:center; color:var(--muted) }
+  .meta { display:grid; grid-template-columns:1.25fr 1.25fr .7fr .8fr; gap:12px; padding:16px; margin-bottom:16px }
+  .meta dt { color:var(--muted); font-size:12px }
+  .meta dd { margin:4px 0 0; font-weight:650 }
+  .detail-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(235px,.49fr); align-items:start; gap:16px }
+  .section { padding:16px; margin-bottom:14px }
+  .section h3 { font-size:16px; margin-bottom:12px }
+  .child { background:#f5f7fc; border-radius:9px; margin-bottom:10px; padding:9px 12px }
+  .child:last-child { margin-bottom:0 }
+  .child-head { justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:4px 10px; padding-bottom:7px }
+  .child-id { font-size:17px; color:#172945; overflow-wrap:anywhere }
+  .child-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; color:var(--muted); margin-inline-start:auto }
+  .source-tag { padding:2px 8px; border-radius:6px; background:#e7edff; color:#4057a8; white-space:nowrap }
+  .source-tag.merchant { background:#efe6fa; color:#6b408c }
+  .subtle { color:var(--muted); font-size:12px }
+  .line { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid var(--line) }
+  .dish { min-width:0 }
+  .dish-name { display:flex; align-items:center; gap:5px }
+  .dish-name b:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .dish-name > :not(:first-child),.money { flex:none; white-space:nowrap }
+  .adjustment-table { white-space:normal }
+  .adjustment-table th,.adjustment-table td { padding:9px 8px; vertical-align:middle }
+  .adjustment-table th { position:static; font-size:12px }
+  .adjustment-table th:first-child { width:42%; border-radius:6px 0 0 6px }
+  .adjustment-table th:last-child { border-radius:0 6px 6px 0 }
+  .adjustment-table td:first-child { max-width:0 }
+  .adjustment-table th:nth-child(2),.adjustment-table th:nth-child(3),.adjustment-table td:nth-child(2),.adjustment-table td:nth-child(3) { text-align:center }
+  .adjustment-table th:last-child,.adjustment-table td:last-child { text-align:right; white-space:nowrap }
+  .adjustment-table tr:last-child td { border-bottom:0 }
+  .money { text-align:right }
+  .item-status-tag { border:1px solid #e9a2aa; border-radius:4px; color:var(--danger); font-size:11px; padding:0 4px }
+  .item-status-tag.cancelled { border-color:#efbd8b; color:#9b4d0d; background:#fff3e6 }
+  .void { text-decoration:line-through; color:#767e92 }
+  .old-price { display:block; color:#8790a4; font-size:12px; text-decoration:line-through }
+  .totals .line { border:0; padding:6px 0 }
+  .totals .paid { border-top:1px solid var(--line); margin-top:7px; padding-top:12px; align-items:center }
+  .paid strong { font-size:22px; color:var(--brand) }
+  #receiptDialog { width:min(390px,calc(100% - 24px)); max-height:90dvh; border-radius:13px; padding:18px; box-shadow:0 10px 40px #19203935 }
+  #receiptDialog::backdrop { backdrop-filter:none }
+  .receipt-actions { justify-content:flex-end; flex-wrap:wrap }
+  #receipt { color:#252525; background:white; padding:18px 10px; font-family:monospace }
+  #receipt h2,#receipt .merchant { text-align:center }
+  #receipt hr { border:0; border-top:1px dashed #777 }
+  #receipt .line { padding:3px 0; border:0 }
+  @media(max-width:780px) {
+    .shell { grid-template-columns:1fr } aside { display:none }
+    #desk { width:calc(100% - 20px); height:calc(100dvh - 24px) }
+    .desk-head { padding:14px } .tabs { margin:0 14px; gap:16px } .content { padding:14px }
+    .detail-grid { grid-template-columns:1fr } .meta { grid-template-columns:repeat(2,1fr) }
+  }
+  @media(max-width:420px) {
+    .date-filter { flex-wrap:wrap; gap:6px }
+    .desk-head h1 { font-size:21px }
+  }
+  @media print {
+    body { background:white }
+    .shell,#desk,.receipt-actions { display:none!important }
+    #receiptDialog::backdrop { display:none }
+    #receiptDialog { position:static; width:76mm; max-height:none; box-shadow:none; margin:0; padding:0; overflow:visible }
+    @page { margin:5mm }
+  }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="printer" viewBox="0 0 24 24"><path d="M6 8V3h12v5M6 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 13h12v8H6zM18 11h1"/></symbol>
+  <symbol id="history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6m3-4v5l3 2"/></symbol>
+  <symbol id="calendarIcon" viewBox="0 0 24 24"><path d="M4 5h16v16H4zM8 3v4m8-4v4M4 10h16"/></symbol>
+</svg>
+<div class="shell">
+  <aside aria-label="商家端导航">
+    <div class="logo"><b>FKM</b> 商家端</div>
+    <div class="nav active">桌台管理</div><div class="nav">订单管理</div><div class="nav">菜品管理</div><div class="nav">店铺设置</div>
+  </aside>
+  <main>
+    <h1>桌台管理</h1><p class="subtle">演示门店 · 选择桌台查看历史订单</p>
+    <div class="floor" id="floor"></div>
+  </main>
+</div>
+<dialog id="desk" aria-labelledby="deskName">
+  <div class="desk-frame">
+    <header class="desk-head">
+      <div class="head-group"><h1 id="deskName"></h1><span class="state" id="deskState"></span></div>
+      <div class="head-group"><span id="deskCapacity"></span><button class="close" data-action="close" aria-label="关闭桌台">×</button></div>
+    </header>
+    <nav class="tabs" aria-label="桌台功能">
+      <span class="tab">点餐管理</span><button class="tab" data-action="table-info">桌台信息</button><span class="tab">折扣/操作</span><span class="tab">预订信息</span>
+      <button class="tab active" data-action="history" aria-current="page"><svg aria-hidden="true"><use href="#history"/></svg>历史订单</button>
+    </nav>
+    <div class="content" id="content"></div>
+  </div>
+</dialog>
+<dialog id="receiptDialog" aria-label="结账小票预览">
+  <div id="receipt"></div>
+  <div class="receipt-actions">
+    <button class="button" id="closeReceipt">关闭预览</button>
+    <button class="button primary" id="printReceipt">打印</button>
+  </div>
+</dialog>
+<script>
+  const dateFormat = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const today = dateFormat.format(new Date());
+  function dayAgo(days) {
+    const date = new Date(today + 'T12:00:00+08:00');
+    date.setUTCDate(date.getUTCDate() - days);
+    return dateFormat.format(date);
+  }
+  const money = cents => '$' + (cents / 100).toFixed(2);
+  const printer = '<svg aria-hidden="true"><use href="#printer"/></svg>';
+  const printButton = id => '<button class="button" data-action="receipt" data-id="' + id + '">' + printer + '打印结账小票</button>';
+  const sum = (rows, value) => rows.reduce((total, row) => total + value(row), 0);
+  const dish = (id, name, qty, price, options = {}) => ({ id, name, qty, price, spec: '', cancellations: [], refunds: [], ...options });
+  const cancellation = (qty, stock, day, time) => ({ qty, stock, time: day + ' ' + time });
+  const refund = (qty, stock, day, time, dishAmount, options = {}) => ({
+    qty, stock, time: day + ' ' + time, dishAmount, service: 0, tax: 0, after: false, ...options
+  });
+  const originalPrice = item => item.original ?? item.price;
+  const activeQty = item => item.qty - sum(item.cancellations, entry => entry.qty);
+  const refundAmount = entry => entry.dishAmount + entry.service + entry.tax;
+  const cancellationAmount = (entry, item) => entry.qty * originalPrice(item);
+  const child = (day, time, source, items) => ({ time: day + ' ' + time, source, items });
+  function makeOrder(table, day, serial, paidTime, guests, children, discount = 0, service = 0, tax = 0) {
+    const items = children.flatMap(entry => entry.items);
+    const subtotal = sum(items, item => activeQty(item) * item.price);
+    const originalTotal = sum(items, item => item.qty * originalPrice(item));
+    const cancelledTotal = sum(items, item => sum(item.cancellations, entry => cancellationAmount(entry, item)));
+    const dishDiscount = sum(items, item => activeQty(item) * (originalPrice(item) - item.price));
+    const refunds = items.flatMap(item => item.refunds);
+    const preRefund = sum(refunds.filter(entry => !entry.after), refundAmount);
+    const refundedTotal = sum(refunds, refundAmount);
+    const id = day.replaceAll('-', '') + 'T' + String(table).padStart(2, '0') + String(serial).padStart(3, '0');
+    return { id, table, paidAt: day + ' ' + paidTime, guests, children, subtotal, preRefund,
+      originalTotal, cancelledTotal, dishDiscount, refundedTotal, discount, service, tax,
+      paid: subtotal - preRefund - discount + service + tax };
+  }
+  const yesterday = dayAgo(1);
+  const orders = [
+    makeOrder(1, today, 8, '20:38', 4, [
+      child(today, '19:12', '用户自点', [
+        dish('pork', '糖醋里脊', 2, 4600, { original: 5200, spec: '标准份｜少甜', refunds: [refund(1, 1, today, '19:50', 4600)] }),
+        dish('veg', '蒜蓉油麦菜', 1, 1800),
+        dish('tea', '冰柠檬茶', 1, 850, { original: 1000, spec: '少冰｜半糖', cancellations: [cancellation(1, 1, today, '19:20')] })
+      ]),
+      child(today, '19:25', '商家代点', [
+        dish('pork', '糖醋里脊', 1, 4600, { spec: '标准份｜少甜', refunds: [refund(1, 0, today, '20:45', 4600, { after: true, service: 460, tax: 455 })] })
+      ]),
+      child(today, '20:02', '用户自点', [
+        dish('rice', '米饭', 3, 250),
+        dish('tea', '冰柠檬茶', 4, 850, { original: 1000, spec: '少冰｜半糖', cancellations: [cancellation(2, 0, today, '20:10')] })
+      ])
+    ], 500, 1295, 1282),
+    makeOrder(1, today, 7, '00:28', 2, [
+      child(yesterday, '23:46', '用户自点', [dish('noodle', '葱油拌面', 2, 1600)]),
+      child(today, '00:05', '商家代点', [dish('tea', '冰柠檬茶', 2, 850)])
+    ]),
+    ...['18:02','16:45','14:12','13:15','12:03','10:32'].map((time, index) =>
+      makeOrder(1, today, 6 - index, time, index === 5 ? null : 1 + index % 4, [
+        child(today, time.slice(0, 2) + ':00', '用户自点', [dish('noodle', '葱油拌面', 1 + index % 3, 1600), dish('tea', '冰柠檬茶', 1, 850)])
+      ])),
+    makeOrder(1, yesterday, 1, '19:10', 2, [child(yesterday, '18:27', '商家代点', [dish('veg', '蒜蓉油麦菜', 2, 1800)])]),
+    makeOrder(2, today, 1, '12:45', 2, [child(today, '12:15', '用户自点', [dish('pork', '糖醋里脊', 1, 4600)])])
+  ];
+  const tables = [{ id: 1, capacity: 5, busy: true }, { id: 2, capacity: 4, busy: false }, { id: 3, capacity: 6, busy: false }];
+  const desk = document.querySelector('#desk');
+  const content = document.querySelector('#content');
+  const receiptDialog = document.querySelector('#receiptDialog');
+  const state = { table: 1, from: today, to: today, listScroll: 0, order: null };
+  const calendar = { month: '', start: '' };
+
+  function openDesk(id) {
+    const table = tables.find(entry => entry.id === id);
+    Object.assign(state, { table: id, from: today, to: today, listScroll: 0, order: null });
+    document.querySelector('#deskName').textContent = id + '号桌';
+    const status = document.querySelector('#deskState');
+    status.textContent = table.busy ? '就餐中' : '空闲';
+    status.classList.toggle('idle', !table.busy);
+    document.querySelector('#deskCapacity').textContent = table.capacity + '人桌';
+    showHistory();
+    desk.showModal();
+  }
+
+  function selectTab(action) {
+    for (const tab of desk.querySelectorAll('button.tab')) {
+      const selected = tab.dataset.action === action;
+      tab.classList.toggle('active', selected);
+      if (selected) tab.setAttribute('aria-current', 'page');
+      else tab.removeAttribute('aria-current');
+    }
+  }
+
+  function showHistory() {
+    selectTab('history');
+    renderList();
+  }
+
+  function showTableInfo() {
+    const table = tables.find(entry => entry.id === state.table);
+    selectTab('table-info');
+    content.innerHTML = `<section class="card section"><h3>桌台信息</h3>
+      ${line('桌台', table.id + '号桌')}${line('可容纳人数', table.capacity + ' 人')}
+      ${line('当前状态', table.busy ? '就餐中' : '空闲')}</section>`;
+    content.scrollTop = 0;
+  }
+
+  function renderList() {
+    state.order = null;
+    content.innerHTML = `
+      <section class="card order-list" aria-label="历史订单列表">
+        <div class="toolbar">
+          <div class="date-filter">
+            <span class="date-label">结账日期</span>
+            <div class="date-picker">
+              <button class="date-trigger" id="dateRange" data-action="toggle-calendar" aria-expanded="false" aria-controls="calendar" aria-label="选择结账日期范围">
+                <span id="rangeStart"></span><span class="date-arrow" aria-hidden="true">→</span><span id="rangeEnd"></span>
+                <svg aria-hidden="true"><use href="#calendarIcon"/></svg>
+              </button>
+              <div class="calendar" id="calendar" aria-label="结账日期日历" hidden></div>
+            </div>
+            <span id="count" class="count" role="status"></span>
+          </div>
+        </div>
+        <div id="results" class="results" tabindex="0" role="region" aria-label="历史订单筛选结果"></div>
+      </section>`;
+    updateRangeLabel();
+    renderResults();
+    document.querySelector('#results').scrollTop = state.listScroll;
+    content.scrollTop = 0;
+  }
+
+  function renderResults() {
+    const count = document.querySelector('#count');
+    const results = document.querySelector('#results');
+    results.scrollTop = 0;
+    const matches = orders.filter(order => {
+      const date = order.paidAt.slice(0, 10);
+      return order.table === state.table && date >= state.from && date <= state.to;
+    }).sort((a, b) => b.paidAt.localeCompare(a.paidAt) || b.id.localeCompare(a.id));
+    count.textContent = '共' + matches.length + '条';
+    if (!matches.length) {
+      results.innerHTML = '<div class="empty">所选日期范围内暂无历史订单</div>';
+      return;
+    }
+    results.innerHTML = `
+      <table>
+        <thead><tr><th scope="col" class="row-number">序号</th><th>订单编号</th><th>下单日期</th><th>结账日期</th><th>实付金额</th><th>就餐人数</th><th>操作</th></tr></thead>
+        <tbody>${matches.map((order, index) => `<tr>
+          <td class="row-number">${index + 1}</td>
+          <td><button class="link number" data-action="detail" data-id="${order.id}">#${order.id}</button></td>
+          <td>${order.children[0].time}</td><td>${order.paidAt}</td>
+          <td class="number">${money(order.paid)}</td><td>${guests(order)}</td>
+          <td><div class="actions"><button class="link" data-action="detail" data-id="${order.id}">查看详情</button>${printButton(order.id)}</div></td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  }
+
+  function updateRangeLabel() {
+    document.querySelector('#rangeStart').textContent = state.from;
+    document.querySelector('#rangeEnd').textContent = state.to;
+    document.querySelector('#dateRange').setAttribute('aria-label', '结账日期：' + state.from + ' 至 ' + state.to);
+  }
+
+  function closeCalendar(restoreFocus = false) {
+    const panel = document.querySelector('#calendar');
+    if (!panel || panel.hidden) return;
+    panel.hidden = true;
+    const trigger = document.querySelector('#dateRange');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) trigger.focus();
+  }
+
+  function renderCalendar() {
+    const [year, month] = calendar.month.split('-').map(Number);
+    const offset = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+    const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const buttons = Array.from({ length: days }, (_, index) => {
+      const day = index + 1;
+      const date = calendar.month + '-' + String(day).padStart(2, '0');
+      const endpoint = calendar.start ? date === calendar.start : date === state.from || date === state.to;
+      const inRange = !calendar.start && date > state.from && date < state.to;
+      return `<button class="calendar-day ${endpoint ? 'endpoint' : ''} ${inRange ? 'in-range' : ''}" data-action="pick-date" data-date="${date}" aria-label="${date}" aria-pressed="${endpoint || inRange}">${day}</button>`;
+    });
+    document.querySelector('#calendar').innerHTML = `
+      <div class="calendar-head">
+        <button class="button" data-action="calendar-prev" aria-label="上个月">‹</button>
+        <strong>${year}年${month}月</strong>
+        <button class="button" data-action="calendar-next" aria-label="下个月">›</button>
+      </div>
+      <div class="calendar-grid">
+        ${[...'一二三四五六日'].map(day => '<span class="subtle">' + day + '</span>').join('')}
+        ${'<span></span>'.repeat(offset)}${buttons.join('')}
+      </div>
+      <p class="calendar-hint" role="status">${calendar.start ? '已选 ' + calendar.start + '，请选择另一端日期' : '请选择开始和结束日期'}</p>`;
+  }
+
+  function toggleCalendar() {
+    const panel = document.querySelector('#calendar');
+    if (!panel.hidden) {
+      closeCalendar(true);
+      return;
+    }
+    calendar.month = state.from.slice(0, 7);
+    calendar.start = '';
+    panel.hidden = false;
+    document.querySelector('#dateRange').setAttribute('aria-expanded', 'true');
+    renderCalendar();
+    panel.querySelector('.endpoint, .calendar-day').focus();
+  }
+
+  function moveCalendarMonth(delta) {
+    const [year, month] = calendar.month.split('-').map(Number);
+    calendar.month = new Date(Date.UTC(year, month - 1 + delta, 1)).toISOString().slice(0, 7);
+    renderCalendar();
+    document.querySelector(delta < 0 ? '[data-action="calendar-prev"]' : '[data-action="calendar-next"]').focus();
+  }
+
+  function pickDate(date) {
+    if (!calendar.start) {
+      calendar.start = date;
+      renderCalendar();
+      document.querySelector('.calendar-day.endpoint').focus();
+      return;
+    }
+    [state.from, state.to] = [calendar.start, date].sort();
+    state.listScroll = 0;
+    updateRangeLabel();
+    closeCalendar(true);
+    renderResults();
+  }
+
+  const guests = order => order.guests === null ? '—' : order.guests + ' 人';
+  const returned = item => sum(item.refunds, entry => entry.qty);
+  const line = (label, value, classes = '') => `<div class="line ${classes}"><span>${label}</span><strong>${value}</strong></div>`;
+  const specs = item => item.spec ? `<div class="subtle">${item.spec}</div>` : '';
+  function renderChild(entry, id) {
+    return `<div class="child">
+      <div class="child-head">
+        <strong class="child-id number">${id}</strong>
+        <div class="child-meta"><span class="source-tag${entry.source === '商家代点' ? ' merchant' : ''}">${entry.source}</span><time datetime="${entry.time.replace(' ', 'T')}">${entry.time.slice(5)}</time></div>
+      </div>
+      ${entry.items.filter(item => activeQty(item) > 0).map(item => {
+        const quantity = activeQty(item);
+        const qty = returned(item);
+        const cancelledQty = item.qty - quantity;
+        const voidClass = qty === quantity ? 'void' : '';
+        return `<div class="line"><div class="dish"><div class="dish-name">
+          <b class="${voidClass}" title="${item.name}">${item.name}</b><b class="${voidClass}">×${quantity}</b>
+          ${qty ? `<span class="item-status-tag">已退款×${qty}</span>` : ''}
+          ${cancelledQty ? `<span class="item-status-tag cancelled">已取消×${cancelledQty}</span>` : ''}
+          </div>${specs(item)}</div>
+          <div class="money"><strong class="${voidClass}">${money(quantity * item.price)}</strong>
+          ${item.original ? `<span class="old-price">${money(quantity * item.original)}</span>` : ''}</div></div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function adjustmentGroups(order, field, amount) {
+    const groups = new Map();
+    for (const item of order.children.flatMap(entry => entry.items)) {
+      for (const entry of item[field]) {
+        const key = JSON.stringify([item.id, item.spec]);
+        const group = groups.get(key) ?? { name: item.name, spec: item.spec, qty: 0, stock: 0, total: 0, last: '' };
+        group.qty += entry.qty;
+        group.stock += entry.stock;
+        group.total += amount(entry, item);
+        if (entry.time > group.last) group.last = entry.time;
+        groups.set(key, group);
+      }
+    }
+    return [...groups.values()].sort((a, b) => a.last.localeCompare(b.last));
+  }
+  function renderAdjustments(title, groups) {
+    if (!groups.length) return '';
+    const amountLabel = title === '已取消' ? '取消金额' : '退款金额';
+    return `<section class="card section"><h3>${title}</h3>
+      <table class="adjustment-table" aria-label="${title}菜品汇总">
+        <thead><tr>
+          <th scope="col">菜品名称</th>
+          <th scope="col">${title}数量</th>
+          <th scope="col">退回库存数量</th>
+          <th scope="col">${amountLabel}</th>
+        </tr></thead>
+        <tbody>${groups.map(item => `<tr>
+          <td><div class="dish-name"><b title="${item.name}">${item.name}</b></div>${specs(item)}</td>
+          <td class="number">${item.qty}</td>
+          <td class="number">${item.stock}</td>
+          <td class="number">${money(item.total)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      </section>`;
+  }
+  function amountLines(order) {
+    const fields = [
+      ['菜品原价', order.originalTotal],
+      ['取消金额', -order.cancelledTotal],
+      ['菜品优惠', -order.dishDiscount],
+      ['整单优惠', -order.discount],
+      ['服务费', order.service],
+      ['消费税', order.tax],
+      ['退款金额', -order.refundedTotal],
+      ['实付金额', order.paid]
+    ];
+    return fields.filter(([, value]) => value !== 0).map(([label, value]) =>
+      line(label, (value < 0 ? '-' : '') + money(Math.abs(value)), label === '实付金额' ? 'paid' : '')
+    ).join('');
+  }
+  function receiptAmountLines(order) {
+    return line('已下单', money(order.subtotal)) +
+      (order.preRefund ? line('已退款', money(order.preRefund)) : '') +
+      (order.discount ? line('折扣', '−' + money(order.discount)) : '') +
+      (order.service ? line('服务费', '+' + money(order.service)) : '') +
+      (order.tax ? line('消费税', '+' + money(order.tax)) : '');
+  }
+  function renderDetail(order) {
+    state.order = order.id;
+    const cancellations = adjustmentGroups(order, 'cancellations', cancellationAmount);
+    const refunds = adjustmentGroups(order, 'refunds', refundAmount);
+    content.innerHTML = `
+      <header class="detail-head">
+        <div class="detail-title">
+          <button class="link" data-action="back">‹ 历史订单</button>
+          <span class="separator" aria-hidden="true">/</span>
+          <h2 tabindex="-1">订单详情 - #${order.id}</h2>
+        </div>
+        ${printButton(order.id)}
+      </header>
+      <dl class="card meta">
+        <div><dt>下单日期</dt><dd>${order.children[0].time}</dd></div><div><dt>结账日期</dt><dd>${order.paidAt}</dd></div>
+        <div><dt>就餐人数</dt><dd>${guests(order)}</dd></div>
+        <div><dt>实付金额</dt><dd class="number">${money(order.paid)}</dd></div>
+      </dl>
+      <div class="detail-grid">
+        <div>
+          <section class="card section"><h3>已下单</h3>
+            ${order.children.map((entry, index) => renderChild(entry, 'FKM' + order.id + '-' + String(index + 1).padStart(3, '0'))).join('')}
+          </section>
+          ${renderAdjustments('已取消', cancellations)}
+          ${renderAdjustments('已退款', refunds)}
+        </div>
+        <section class="card section totals"><h3>金额统计</h3>${amountLines(order)}</section>
+      </div>`;
+    content.scrollTop = 0;
+    content.querySelector('h2').focus({ preventScroll: true });
+  }
+
+  function previewReceipt(order) {
+    const items = order.children.flatMap(entry => entry.items);
+    document.querySelector('#receipt').innerHTML = `
+      <p class="merchant">FKM 演示门店</p><h2>结账小票</h2><hr>
+      <div>订单编号：#${order.id}</div><div>桌台：${order.table}号桌　就餐人数：${guests(order)}</div>
+      <div>结账时间：${order.paidAt}</div><hr>
+      ${items.filter(item => activeQty(item) > 0).map(item => line(item.name + ' ×' + activeQty(item), money(activeQty(item) * item.price))).join('')}<hr>
+      ${receiptAmountLines(order)}<hr>${line('实付金额', money(order.paid))}`;
+    receiptDialog.showModal();
+  }
+
+  desk.addEventListener('click', event => {
+    if (!event.target.closest('.date-picker')) closeCalendar();
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+    switch (button.dataset.action) {
+      case 'close': desk.close(); break;
+      case 'table-info': showTableInfo(); break;
+      case 'history': showHistory(); break;
+      case 'toggle-calendar': toggleCalendar(); break;
+      case 'calendar-prev': moveCalendarMonth(-1); break;
+      case 'calendar-next': moveCalendarMonth(1); break;
+      case 'pick-date': pickDate(button.dataset.date); break;
+      case 'detail':
+        state.listScroll = document.querySelector('#results').scrollTop;
+        renderDetail(orders.find(order => order.id === button.dataset.id));
+        break;
+      case 'back': {
+        const id = state.order;
+        renderList();
+        content.querySelector('[data-action="detail"][data-id="' + id + '"]')?.focus({ preventScroll: true });
+        break;
+      }
+      case 'receipt': previewReceipt(orders.find(order => order.id === button.dataset.id)); break;
+    }
+  });
+  desk.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.querySelector('#calendar')?.hidden === false) {
+      event.preventDefault();
+      closeCalendar(true);
+    }
+  });
+  document.querySelector('#closeReceipt').addEventListener('click', () => receiptDialog.close());
+  document.querySelector('#printReceipt').addEventListener('click', () => window.print());
+
+  const floor = document.querySelector('#floor');
+  floor.innerHTML = tables.map(table => `<button class="tile ${table.busy ? 'busy' : ''}" data-table="${table.id}">
+    <strong>${table.id}号桌</strong>${table.capacity}人桌 · ${table.busy ? '就餐中' : '空闲'}
+  </button>`).join('');
+  floor.addEventListener('click', event => {
+    const button = event.target.closest('[data-table]');
+    if (button) openDesk(Number(button.dataset.table));
+  });
+  openDesk(1);
+</script>
+</body>
+</html>
