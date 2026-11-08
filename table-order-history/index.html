@@ -101,6 +101,8 @@
   .child-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; color:var(--muted); margin-inline-start:auto }
   .source-tag { padding:2px 8px; border-radius:6px; background:#e7edff; color:#4057a8; white-space:nowrap }
   .source-tag.merchant { background:#efe6fa; color:#6b408c }
+  .dining-tag { padding:2px 8px; border-radius:6px; background:#e3f3eb; color:#28634a; white-space:nowrap }
+  .dining-tag.takeaway { background:#fff0da; color:#875017 }
   .subtle { color:var(--muted); font-size:12px }
   .line { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid var(--line) }
   .dish { min-width:0 }
@@ -207,7 +209,7 @@
   const activeQty = item => item.qty - sum(item.cancellations, entry => entry.qty);
   const refundAmount = entry => entry.dishAmount + entry.service + entry.tax;
   const cancellationAmount = (entry, item) => entry.qty * originalPrice(item);
-  const child = (day, time, source, items) => ({ time: day + ' ' + time, source, items });
+  const child = (day, time, source, items, dining = '堂食') => ({ time: day + ' ' + time, source, items, dining });
   function makeOrder(table, day, serial, paidTime, guests, children, discount = 0, service = 0, tax = 0) {
     const items = children.flatMap(entry => entry.items);
     const subtotal = sum(items, item => activeQty(item) * item.price);
@@ -236,7 +238,7 @@
       child(today, '20:02', '用户自点', [
         dish('rice', '米饭', 3, 250),
         dish('tea', '冰柠檬茶', 4, 850, { original: 1000, spec: '少冰｜半糖', cancellations: [cancellation(2, 0, today, '20:10')] })
-      ])
+      ], '外带')
     ], 500, 1295, 1282),
     makeOrder(1, today, 7, '00:28', 2, [
       child(yesterday, '23:46', '用户自点', [dish('noodle', '葱油拌面', 2, 1600)]),
@@ -424,7 +426,11 @@
     return `<div class="child">
       <div class="child-head">
         <strong class="child-id number">${id}</strong>
-        <div class="child-meta"><span class="source-tag${entry.source === '商家代点' ? ' merchant' : ''}">${entry.source}</span><time datetime="${entry.time.replace(' ', 'T')}">${entry.time.slice(5)}</time></div>
+        <div class="child-meta">
+          <span class="source-tag${entry.source === '商家代点' ? ' merchant' : ''}">${entry.source}</span>
+          <span class="dining-tag${entry.dining === '外带' ? ' takeaway' : ''}">${entry.dining}</span>
+          <time datetime="${entry.time.replace(' ', 'T')}">${entry.time.slice(5)}</time>
+        </div>
       </div>
       ${entry.items.filter(item => activeQty(item) > 0).map(item => {
         const quantity = activeQty(item);
