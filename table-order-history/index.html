@@ -63,14 +63,12 @@
   .date-trigger { display:flex; align-items:center; justify-content:space-between; gap:clamp(6px,2vw,20px); padding:10px 13px; border:1px solid var(--line); border-radius:12px; background:white; white-space:nowrap; font-variant-numeric:tabular-nums }
   .date-trigger:hover,.date-trigger[aria-expanded=true] { border-color:#b9aaff }
   .date-trigger svg { color:var(--brand); margin-left:4px }
-  .date-arrow { color:#8790a4 }
   .calendar { position:absolute; z-index:3; top:calc(100% + 6px); left:0; width:min(290px,calc(100vw - 78px)); padding:12px; border:1px solid var(--line); border-radius:12px; background:white; box-shadow:0 8px 24px #19203926 }
   .calendar-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px }
   .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); text-align:center; gap:2px }
-  .calendar-day { border:0; border-radius:5px; background:white; min-height:28px; padding:0 }
-  .calendar-day:hover,.calendar-day.in-range { background:var(--tint) }
-  .calendar-day.endpoint { color:white; background:var(--brand) }
-  .calendar-hint { color:var(--muted); font-size:12px; margin-top:7px }
+  .calendar-day { border:0; border-radius:5px; color:#727b8d; background:transparent; min-height:28px; padding:0 }
+  .calendar-day.has-orders { color:#4323cb; font-weight:700 }
+  .calendar-day:hover,.calendar-day.selected { text-decoration:underline; text-underline-offset:3px }
   .button { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:7px 11px; background:white; border:1px solid #dce1ed; border-radius:7px; white-space:nowrap }
   .button:hover { background:var(--surface) }
   .button.primary { color:white; background:var(--brand); border-color:var(--brand) }
@@ -255,12 +253,12 @@
   const desk = document.querySelector('#desk');
   const content = document.querySelector('#content');
   const receiptDialog = document.querySelector('#receiptDialog');
-  const state = { table: 1, from: today, to: today, listScroll: 0, order: null };
-  const calendar = { month: '', start: '' };
+  const state = { table: 1, date: today, listScroll: 0, order: null };
+  const calendar = { month: '' };
 
   function openDesk(id) {
     const table = tables.find(entry => entry.id === id);
-    Object.assign(state, { table: id, from: today, to: today, listScroll: 0, order: null });
+    Object.assign(state, { table: id, date: today, listScroll: 0, order: null });
     document.querySelector('#deskName').textContent = id + '号桌';
     const status = document.querySelector('#deskState');
     status.textContent = table.busy ? '就餐中' : '空闲';
@@ -301,8 +299,8 @@
           <div class="date-filter">
             <span class="date-label">结账日期</span>
             <div class="date-picker">
-              <button class="date-trigger" id="dateRange" data-action="toggle-calendar" aria-expanded="false" aria-controls="calendar" aria-label="选择结账日期范围">
-                <span id="rangeStart"></span><span class="date-arrow" aria-hidden="true">→</span><span id="rangeEnd"></span>
+              <button class="date-trigger" id="dateTrigger" data-action="toggle-calendar" aria-expanded="false" aria-controls="calendar" aria-label="选择结账日期">
+                <span id="selectedDate"></span>
                 <svg aria-hidden="true"><use href="#calendarIcon"/></svg>
               </button>
               <div class="calendar" id="calendar" aria-label="结账日期日历" hidden></div>
@@ -312,7 +310,7 @@
         </div>
         <div id="results" class="results" tabindex="0" role="region" aria-label="历史订单筛选结果"></div>
       </section>`;
-    updateRangeLabel();
+    updateDateLabel();
     renderResults();
     document.querySelector('#results').scrollTop = state.listScroll;
     content.scrollTop = 0;
@@ -322,13 +320,11 @@
     const count = document.querySelector('#count');
     const results = document.querySelector('#results');
     results.scrollTop = 0;
-    const matches = orders.filter(order => {
-      const date = order.paidAt.slice(0, 10);
-      return order.table === state.table && date >= state.from && date <= state.to;
-    }).sort((a, b) => b.paidAt.localeCompare(a.paidAt) || b.id.localeCompare(a.id));
+    const matches = orders.filter(order => order.table === state.table && order.paidAt.slice(0, 10) === state.date)
+      .sort((a, b) => b.paidAt.localeCompare(a.paidAt) || b.id.localeCompare(a.id));
     count.textContent = '共' + matches.length + '条';
     if (!matches.length) {
-      results.innerHTML = '<div class="empty">所选日期范围内暂无历史订单</div>';
+      results.innerHTML = '<div class="empty">所选日期暂无历史订单</div>';
       return;
     }
     results.innerHTML = `
@@ -344,17 +340,16 @@
       </table>`;
   }
 
-  function updateRangeLabel() {
-    document.querySelector('#rangeStart').textContent = state.from;
-    document.querySelector('#rangeEnd').textContent = state.to;
-    document.querySelector('#dateRange').setAttribute('aria-label', '结账日期：' + state.from + ' 至 ' + state.to);
+  function updateDateLabel() {
+    document.querySelector('#selectedDate').textContent = state.date;
+    document.querySelector('#dateTrigger').setAttribute('aria-label', '选择结账日期，当前为 ' + state.date);
   }
 
   function closeCalendar(restoreFocus = false) {
     const panel = document.querySelector('#calendar');
     if (!panel || panel.hidden) return;
     panel.hidden = true;
-    const trigger = document.querySelector('#dateRange');
+    const trigger = document.querySelector('#dateTrigger');
     trigger.setAttribute('aria-expanded', 'false');
     if (restoreFocus) trigger.focus();
   }
@@ -363,12 +358,13 @@
     const [year, month] = calendar.month.split('-').map(Number);
     const offset = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
     const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const orderDates = new Set(orders.filter(order => order.table === state.table).map(order => order.paidAt.slice(0, 10)));
     const buttons = Array.from({ length: days }, (_, index) => {
       const day = index + 1;
       const date = calendar.month + '-' + String(day).padStart(2, '0');
-      const endpoint = calendar.start ? date === calendar.start : date === state.from || date === state.to;
-      const inRange = !calendar.start && date > state.from && date < state.to;
-      return `<button class="calendar-day ${endpoint ? 'endpoint' : ''} ${inRange ? 'in-range' : ''}" data-action="pick-date" data-date="${date}" aria-label="${date}" aria-pressed="${endpoint || inRange}">${day}</button>`;
+      const hasOrders = orderDates.has(date);
+      const selected = date === state.date;
+      return `<button class="calendar-day${hasOrders ? ' has-orders' : ''}${selected ? ' selected' : ''}" data-action="pick-date" data-date="${date}" aria-label="${date}，${hasOrders ? '有订单' : '无订单'}" aria-pressed="${selected}">${day}</button>`;
     });
     document.querySelector('#calendar').innerHTML = `
       <div class="calendar-head">
@@ -379,8 +375,7 @@
       <div class="calendar-grid">
         ${[...'一二三四五六日'].map(day => '<span class="subtle">' + day + '</span>').join('')}
         ${'<span></span>'.repeat(offset)}${buttons.join('')}
-      </div>
-      <p class="calendar-hint" role="status">${calendar.start ? '已选 ' + calendar.start + '，请选择另一端日期' : '请选择开始和结束日期'}</p>`;
+      </div>`;
   }
 
   function toggleCalendar() {
@@ -389,12 +384,11 @@
       closeCalendar(true);
       return;
     }
-    calendar.month = state.from.slice(0, 7);
-    calendar.start = '';
+    calendar.month = state.date.slice(0, 7);
     panel.hidden = false;
-    document.querySelector('#dateRange').setAttribute('aria-expanded', 'true');
+    document.querySelector('#dateTrigger').setAttribute('aria-expanded', 'true');
     renderCalendar();
-    panel.querySelector('.endpoint, .calendar-day').focus();
+    (panel.querySelector('.calendar-day.selected') ?? panel.querySelector('.calendar-day')).focus();
   }
 
   function moveCalendarMonth(delta) {
@@ -405,15 +399,9 @@
   }
 
   function pickDate(date) {
-    if (!calendar.start) {
-      calendar.start = date;
-      renderCalendar();
-      document.querySelector('.calendar-day.endpoint').focus();
-      return;
-    }
-    [state.from, state.to] = [calendar.start, date].sort();
+    state.date = date;
     state.listScroll = 0;
-    updateRangeLabel();
+    updateDateLabel();
     closeCalendar(true);
     renderResults();
   }
