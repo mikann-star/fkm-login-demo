@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>回收站 · FKM 商家端</title>
+<style>
+:root{--ink:#29305d;--muted:#626d86;--line:#e7eaf4;--purple:#4521ef;--tint:#f1ecff;font:14px/1.5 "Segoe UI","Microsoft YaHei",sans-serif;color:var(--ink);background:#f3f5fc}
+*{box-sizing:border-box}body,h1,h2,p{margin:0}button,select{font:inherit;color:inherit;cursor:pointer}button:disabled{opacity:.55;cursor:default}button:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--purple);outline-offset:3px}[hidden]{display:none!important}
+svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;flex:none}
+.shell{display:grid;grid-template-columns:215px minmax(0,1fr);height:100dvh}.side{display:flex;flex-direction:column;background:white;border-right:1px solid var(--line);padding:22px 12px 16px;overflow:auto}.logo{display:flex;align-items:center;gap:10px;margin:0 4px 29px;white-space:nowrap}.logo b{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--purple);color:white;font-size:18px}.logo strong{font-size:16px;letter-spacing:-.3px}.logo small{display:block;color:var(--muted);font-size:11px}.version{margin-top:auto;padding:18px 10px 0;font-size:11px;color:var(--muted)}
+nav{display:grid;gap:5px}nav button{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:42px;border:1px solid transparent;border-radius:12px;background:white;text-align:left;color:#4e587d;white-space:nowrap}nav button:hover{background:#f7f7fd}nav button[aria-current]{background:var(--tint);color:var(--purple);border-color:#e8dfff;font-weight:700}nav em{margin-left:auto;border-radius:18px;background:#fceaea;color:#ad3a42;padding:0 7px;font:700 10px/1.6 inherit;font-size:10px;font-style:normal}
+main{min-height:0;overflow:auto;padding:24px clamp(15px,2.6vw,44px);display:flex;flex-direction:column;gap:16px}.top,.list-head,.foot{display:flex;justify-content:space-between;align-items:center;gap:8px}.top{font-size:12px;color:var(--muted)}.top strong{color:var(--ink)}.top svg{width:14px;margin:0 5px}.demo{padding:4px 10px;border:1px solid var(--line);border-radius:30px;background:#fff;white-space:nowrap}.demo::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#7855ed;margin:0 6px 1px 0}
+.heading{display:flex;align-items:center;gap:13px;margin:4px 0}.hero{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:var(--tint);border:1px solid #e6ddff;color:var(--purple);flex:none}.hero svg{width:24px;height:24px}h1{font-size:27px;line-height:1.2}.heading p{color:var(--muted);font-size:13px;margin-top:5px}.note{display:flex;align-items:center;gap:8px;padding:10px 13px;border-radius:10px;border:1px solid #e7dfff;background:#f5f1ff;color:#594686;font-size:13px}.note svg{color:#7050e4;width:17px;height:17px}
+.card{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 25px #20275308}.filters{display:flex;gap:12px 20px;flex-wrap:wrap;padding:14px 18px;position:relative;z-index:2}.field{display:grid;gap:5px;font-size:12px;font-weight:650}.control{min-height:37px;border:1px solid #dce0ef;border-radius:8px;background:white;padding:0 11px;font-size:13px;font-weight:500}.control:hover{border-color:#a695f5}select.control{min-width:150px}.date-wrap{position:relative}.date-button{display:flex;align-items:center;gap:9px;font-variant-numeric:tabular-nums}.date-button svg{width:15px;color:var(--muted)}.calendar-panel{position:absolute;top:calc(100% + 8px);left:0;width:min(318px,calc(100vw - 72px));padding:12px;border:1px solid var(--line);border-radius:12px;background:white;box-shadow:0 16px 42px #27245126}.ends{display:grid;grid-template-columns:1fr 1fr;gap:6px}.ends button,.day,.month button{border:1px solid transparent;border-radius:7px;background:white}.ends button{padding:6px 3px;background:#f5f6fc}.ends button[aria-pressed=true],.day.range,.day:hover,.month button:hover{background:var(--tint);color:var(--purple)}.month{display:flex;align-items:center;justify-content:space-between;margin:8px 0}.month button{padding:4px 8px}.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}.grid span{color:var(--muted)}.day{height:29px;padding:0}.day.today{border-color:#ded3ff}.day.chosen{background:var(--purple);color:white}
+.list{flex:1;min-height:220px;display:flex;flex-direction:column;overflow:hidden}.list-head,.foot{padding:12px 18px}.list-head>div{display:flex;gap:9px;align-items:center}h2{font-size:16px}.total{padding:1px 8px;background:#f1eefb;color:#594488;border-radius:20px;font-weight:650;font-size:12px}.foot{color:var(--muted);font-size:12px}.foot{border-top:1px solid var(--line);padding-block:8px}.results{position:relative;overflow:auto;flex:1 1 0;min-height:0}table{width:100%;min-width:825px;border-spacing:0;text-align:left;font-size:13px}th,td{padding:10px 11px;border-bottom:1px solid #eef0f6}th:first-child,td:first-child{padding-left:18px}th:last-child,td:last-child{text-align:right;padding-right:18px}thead{position:sticky;top:0;z-index:2}th{background:#f7f8fc;color:#535e78;font-size:12px;white-space:nowrap}td{height:49px;color:#4e5871}td.name{min-width:155px;max-width:350px;font-weight:650;color:var(--ink);overflow-wrap:anywhere}.nowrap{white-space:nowrap;font-variant-numeric:tabular-nums}.soon{color:#98551d}tr:hover td{background:#faf9ff}.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;white-space:nowrap;background:#f0ebff;color:#5838a2;font-size:12px}.chip svg{width:13px;height:13px}.chip.order{background:#ebf1ff;color:#3659a7}.chip.booking{background:#e8f6f1;color:#226a56}.chip.dish{background:#fff1e6;color:#914d22}.chip.service{background:#eaf5fd;color:#2e6087}.chip.feedback{background:#fbedf3;color:#914168}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;white-space:nowrap;border:1px solid #dfe2ee;border-radius:8px;background:white;font-size:13px;font-weight:650}.btn:hover{background:#f5f1ff}.primary{background:var(--purple);border-color:var(--purple);color:white}.primary:hover:not(:disabled){background:#3515cf}.restore{background:#f4efff;color:#4924d8;border-color:transparent;padding:4px 9px}.restore svg{width:14px;height:14px}.danger{background:#fff2f4;border-color:#f9dfe4;color:#a83142}.state{display:grid;place-items:center;text-align:center;height:100%;min-height:150px;color:var(--muted);padding:15px}.state svg{width:37px;height:37px;padding:8px;border-radius:11px;background:var(--tint);color:var(--purple)}.state p{margin:7px 0}.spinner{width:24px;height:24px;margin:auto;border:2px solid #e9e2ff;border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+dialog{width:min(440px,calc(100vw - 28px));border:1px solid var(--line);border-radius:16px;padding:19px 21px;color:var(--ink);box-shadow:0 20px 72px #22164d40}dialog::backdrop{background:#23275066}.modal-head{display:flex;justify-content:space-between;align-items:center}.close{border:0;border-radius:6px;background:white;color:var(--muted);padding:4px}.close:hover{background:var(--tint)}.message{margin:10px 0;color:#535d77}.summary{padding:9px 11px;border-radius:8px;background:#f6f5fc;overflow-wrap:anywhere}.summary small{display:block;margin-top:3px;color:var(--muted)}.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}.option,.error{margin-top:10px}.error{color:#a63143}.toast{position:fixed;z-index:10;top:16px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);padding:9px 15px;border-radius:8px;background:#282244;color:white;box-shadow:0 8px 24px #28224440;text-align:center}
+@media(max-width:980px){.shell{grid-template-columns:175px minmax(0,1fr)}.side{padding-inline:8px}.logo strong{font-size:13px}nav button{padding-inline:8px}}
+@media(max-width:700px){.shell{grid-template-columns:52px minmax(0,1fr)}.side{padding:12px 4px}.logo{justify-content:center;margin-bottom:15px}.logo b{width:32px;height:32px}.logo div,nav span,nav em,.version,.sort{display:none}nav button{justify-content:center;padding:7px 0;min-height:37px}main{padding:12px 10px;gap:11px}.hero{width:39px;height:39px}h1{font-size:23px}.filters,.list-head,.foot{padding-inline:10px}.calendar-panel{left:-7px}.note{align-items:flex-start}}
+.foot:empty{display:none}.foot-count{margin-inline-start:auto}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <div class="logo"><b>F</b><div><strong>FKM CoffeeFlow</strong><small>商家管理端</small></div></div>
+  <nav id="nav" aria-label="商家端导航"></nav><div class="version">FKM 商家端 · V1.7</div>
+</aside>
+<main>
+  <div class="top"><div id="crumb"></div><span class="demo">原型演示</span></div>
+  <header class="heading"><div class="hero" id="hero"></div><div><h1 id="title">回收站</h1><p id="subtitle"></p></div></header>
+  <div class="note" id="note" hidden></div>
+  <section class="card filters" id="filters" aria-label="筛选删除记录">
+    <label class="field">数据来源<select class="control" id="source"></select></label>
+    <div class="field"><span id="date-label">删除日期</span><div class="date-wrap" id="date-wrap">
+      <button class="control date-button" id="date-button" aria-expanded="false" aria-controls="date-panel" aria-labelledby="date-label date-value"></button>
+      <div class="calendar-panel" id="date-panel" role="group" aria-label="选择删除日期" hidden>
+        <div class="ends" id="ends"></div>
+        <div class="month"><button id="prev" aria-label="上个月"></button><strong id="month-label" aria-live="polite"></strong><button id="next" aria-label="下个月"></button></div>
+        <div class="grid" id="calendar"></div>
+        <div class="actions"><button class="btn" id="date-cancel">取消</button><button class="btn primary" id="date-confirm">确认</button></div>
+      </div>
+    </div></div>
+  </section>
+  <section class="card list" aria-labelledby="list-title">
+    <div class="list-head" id="list-head" hidden><div><h2 id="list-title">删除记录</h2><span class="total" id="total" aria-live="polite"></span></div></div>
+    <div class="results" id="results" tabindex="0" aria-label="记录列表"></div>
+    <div class="foot" id="foot" aria-live="polite"></div>
+  </section>
+</main>
+</div>
+<dialog id="modal" aria-labelledby="modal-title">
+  <div class="modal-head"><h2 id="modal-title"></h2><button class="close" id="close" aria-label="关闭"></button></div>
+  <p class="message" id="message"></p><div class="summary" id="summary"></div>
+  <label class="field option" id="option" hidden><span id="option-label"></span><select class="control" id="replacement"></select></label>
+  <p class="error" id="error" role="alert" hidden></p>
+  <div class="actions"><button class="btn" id="cancel" autofocus>取消</button><button class="btn primary" id="confirm"></button></div>
+  <div class="toast" id="modal-toast" role="status" hidden></div>
+</dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const paths = {
+  table:'<rect x="4" y="4" width="16" height="10" rx="2"/><path d="M3 10H2v8h20v-8h-1M5 18v3m14-3v3"/>',
+  order:'<rect x="4" y="6" width="16" height="15" rx="2"/><path d="m4 7 2-4h12l2 4m-11 3a3 3 0 0 0 6 0"/>',
+  booking:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/><circle cx="13" cy="15.5" r="3"/><path d="M13 14v1.5l1 1"/>',
+  dish:'<path d="M7 3h7l5 5v13H5V3h2Zm7 0v6h5M8 12h8m-8 4h8"/>',
+  service:'<path d="M5 16H3l2-3V9a7 7 0 0 1 14 0v4l2 3H5m4 3a3 3 0 0 0 6 0"/>',
+  feedback:'<path d="M4 4h16v13H9l-5 4V4Zm4 4h8m-8 4h6"/>',
+  finance:'<path d="M12 3v9h9M9 3.5A9 9 0 1 0 20.5 15M15 3.5A9 9 0 0 1 20.5 9"/>',
+  shop:'<path d="M3 10l2-6h14l2 6a3 3 0 0 1-4.5 2.6A3 3 0 0 1 12 12a3 3 0 0 1-4.5.6A3 3 0 0 1 3 10Zm2 4v7h14v-7m-9 7v-5h4v5"/>',
+  ai:'<path d="M11 2l2.5 6.5L20 11l-6.5 2.5L11 20l-2.5-6.5L2 11l6.5-2.5L11 2Zm8 14v6m-3-3h6"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="m10 3-1 3-3 1-3 3 2 2-1 3 3 3 3-1 2 4 3-2 1-3 4-1 1-4-3-1-1-3-3-1-1-3Z"/>',
+  trash:'<path d="M3 6h18M9 6V3h6v3m-10 0 1 15h12l1-15M10 10v7m4-7v7"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
+  right:'<path d="m9 5 7 7-7 7"/>',left:'<path d="m15 5-7 7 7 7"/>',down:'<path d="m5 9 7 7 7-7"/>',
+  undo:'<path d="M8 5 3 10l5 5m-5-5h11a5 5 0 0 1 0 10h-2"/>',
+  close:'<path d="m6 6 12 12M18 6 6 18"/>'
+};
+const icon = key => '<svg viewBox="0 0 24 24" aria-hidden="true">'+paths[key]+'</svg>';
+const esc = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const sources = {table:'桌台',order:'订单',booking:'预订',dish:'菜品',service:'服务请求',feedback:'客户反馈',ai:'AI 一键提问'};
+const navigation = {table:'桌台管理',order:'订单管理',booking:'预订管理',dish:'菜品管理',service:'服务请求',feedback:'客户反馈',finance:'财务统计',shop:'店铺设置',ai:'AI 端设置',settings:'系统设置',trash:'回收站'};
+const badges = {order:'22',service:'99+',feedback:'99+'};
+const DAY = 86400000, TTL = 30 * DAY;
+const now = new Date();
+const pad = n => String(n).padStart(2,'0');
+const dateKey = d => [d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+const today = dateKey(now);
+const zones = ['大厅','包间','户外'];
+const item = (id,source,name,details={}) => ({id,source,name,...details});
+const batch = (id,items,stamp,operator) => ({id,items,source:items[0].source,stamp,operator});
+const batchName = ({items}) => items[0].name+(items.length>1?' 等 '+items.length+' 条':'');
+function timeText(stamp) {
+  const d = new Date(stamp);
+  return dateKey(d)+' '+[d.getHours(),d.getMinutes(),d.getSeconds()].map(pad).join(':');
+}
+function remaining(ms) {
+  if (ms>=DAY) return Math.ceil(ms/DAY)+' 天';
+  const minutes = Math.max(0,Math.floor(ms/60000));
+  return Math.floor(minutes/60)+' 小时 '+minutes%60+' 分';
+}
+function seed() {
+  const orderId = 'SO-'+today.replaceAll('-','');
+  const americano = {category:'咖啡',english:'Classic Americano',price:22};
+  const rows = [
+    [item('t1','table','A-08',{zone:'大厅',capacity:4,status:'空闲'})],
+    [item('b1','booking','张先生 - '+timeText(now-DAY).slice(0,16),{diningAt:now-DAY,status:'待就餐',tableId:'deleted-table'}),
+      ...['李女士','陈先生','王女士','周先生','吴女士','赵先生','许女士','林先生'].map((name,i)=>
+        item('b'+(i+2),'booking',name+' - '+today+' 19:00',{status:'已取消'}))],
+    [item('d1','dish','海盐焦糖拿铁',{category:'季节限定',english:'Sea Salt Caramel Latte',price:32,spec:'大杯'})],
+    [item('o1','order',orderId+'-036',{status:'已完成',channel:'扫码点单',orderedAt:now-3600000,lines:[{name:'美式咖啡',spec:'中杯',quantity:1,price:22}]})],
+    [item('s1','service','6 号桌 - 加一套餐具'),item('s2','service','6 号桌 - 需要纸巾'),item('s3','service','9 号桌 - 加冰水')],
+    [item('f1','feedback','12 号桌 - 希望增加低糖选项')],
+    [item('a1','ai','如何设置门店的营业时段？')],
+    [item('t2','table','B-03',{zone:'旧露台',capacity:2,status:'空闲'})],
+    [item('c1','dish','秋季限定',{kind:'category',priority:1})],
+    [item('d2','dish','经典美式',americano)],
+    [item('t3','table','A-01',{zone:'大厅',capacity:4,status:'空闲'})],
+    [item('a2','ai','如何为订单设置备注？')]
+  ];
+  const midnight = +new Date(today+'T00:00:00');
+  const latest = Math.min(+now,midnight+16*3600000);
+  const span = Math.min(latest-midnight,6*3600000);
+  const records = rows.map((items,i)=>batch('sample-'+i,items,Math.floor(latest-span*i/rows.length),'门店管理员-'+['POS01','PAD02','PC01'][i%3]));
+  records.push(batch('near-expiry',[item('f2','feedback','3 号桌 - 希望增加儿童餐具')],now-TTL+750*60000,'门店管理员-PAD02'));
+  return {records,active:[
+    item('at1','table','A-01',{zone:'大厅',capacity:4,status:'空闲'}),
+    item('at2','table','A-02',{zone:'大厅',capacity:2,status:'空闲'}),
+    item('ad1','dish','经典美式',americano),
+    ...['咖啡','轻食','甜品'].map((name,i)=>item('ac'+i,'dish',name,{kind:'category',priority:i+1})),
+    item('ao1','order',orderId+'-039',{status:'已完成'}),
+    item('ab1','booking','孙女士 - '+today+' 19:30',{status:'待就餐',diningAt:+new Date(today+'T19:30:00'),tableId:'at2'}),
+    item('ab2','booking','郑先生 - '+today+' 20:00',{status:'待就餐',diningAt:+new Date(today+'T20:00:00')}),
+    item('as1','service','2 号桌 - 加一杯冰水'),item('as2','service','4 号桌 - 请帮忙结账'),
+    item('af1','feedback','5 号桌 - 出餐速度很快'),item('aa1','ai','如何调整菜品展示顺序？')
+  ]};
+}
+const storeKey = 'fkm-trash-v17-prototype';
+let memory = seed();
+let persistent = true;
+try {
+  if (!localStorage.getItem(storeKey)) localStorage.setItem(storeKey,JSON.stringify(memory));
+} catch { persistent = false; }
+function load() {
+  return persistent ? JSON.parse(localStorage.getItem(storeKey)) || structuredClone(memory) : structuredClone(memory);
+}
+function save(state) {
+  if (persistent) localStorage.setItem(storeKey,JSON.stringify(state));
+  memory = state;
+}
+const mutate = change => navigator.locks && persistent ? navigator.locks.request(storeKey,change) : Promise.resolve().then(change);
+const params = new URLSearchParams(location.search);
+let failList = params.has('list-error'), failRestore = params.has('restore-error');
+const filter = {source:'',start:today,end:today};
+const selected = new Set();
+const modal = $('modal');
+let page = 'trash', version = 0, action, pending = false, draft, month, endpoint, toastTimer;
+const collator = new Intl.Collator('zh-CN',{numeric:true});
+const chip = key => '<span class="chip '+key+'">'+icon(key)+sources[key]+'</span>';
+const count = label => { $('total').textContent = label; };
+
+function toast(text,ms=2000) {
+  clearTimeout(toastTimer);
+  $('toast').hidden = $('modal-toast').hidden = true;
+  const node = $(modal.open?'modal-toast':'toast');
+  node.textContent = text;
+  node.hidden = false;
+  toastTimer = setTimeout(()=>{ node.hidden = true; },ms);
+}
+function stateMessage(text,kind) {
+  const graphic = kind==='loading'?'<div class="spinner" aria-hidden="true"></div>':icon(kind==='error'?'info':'trash');
+  $('results').innerHTML = '<div class="state"><div>'+graphic+'<p role="status">'+text+'</p>'+
+    (kind==='error'?'<button class="btn" id="retry">重试</button>':'')+'</div></div>';
+}
+function drawTable(headers,rows) {
+  $('results').innerHTML = '<table><thead><tr>'+headers.map(title=>'<th scope="col">'+title+'</th>').join('')+
+    '</tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+}
+function renderTrash() {
+  const stamp = Date.now();
+  const records = load().records.filter(record=>{
+    const day = dateKey(new Date(record.stamp));
+    return record.stamp+TTL>stamp && day>=filter.start && day<=filter.end && (!filter.source || filter.source===record.source);
+  }).sort((a,b)=>b.stamp-a.stamp || collator.compare(batchName(a),batchName(b)));
+  count(records.length+' 条');
+  $('foot').innerHTML = '<span class="foot-count">共 '+records.length+' 条删除记录</span>';
+  if (!records.length) return stateMessage('当前暂未查询到可还原数据','empty');
+  drawTable(['名称','数据来源','删除者','删除时间','剩余可还原时长','操作'],records.map(record=>{
+    const expiry = record.stamp+TTL, ttl = expiry-stamp;
+    return '<tr><td class="name">'+esc(batchName(record))+'</td><td>'+chip(record.source)+'</td>'+
+      '<td class="nowrap">'+esc(record.operator)+'</td><td class="nowrap">'+timeText(record.stamp)+'</td>'+
+      '<td class="nowrap'+(ttl<DAY?' soon':'')+'" data-expiry="'+expiry+'">'+remaining(ttl)+'</td>'+
+      '<td><button class="btn restore" data-restore="'+esc(record.id)+'">'+icon('undo')+'还原</button></td></tr>';
+  }));
+}
+function query() {
+  const request = ++version;
+  $('date-value').textContent = filter.start+' 至 '+filter.end;
+  $('foot').textContent = '';
+  $('results').setAttribute('aria-busy','true');
+  count('查询中');
+  stateMessage('正在加载回收站…','loading');
+  setTimeout(()=>{
+    if (page!=='trash' || request!==version) return;
+    $('results').setAttribute('aria-busy','false');
+    try {
+      if (failList) {
+        failList = false;
+        throw new Error('Simulated list error');
+      }
+      renderTrash();
+    } catch {
+      count('加载失败');
+      stateMessage('回收站加载失败，请重试','error');
+      $('retry').onclick = query;
+    }
+  },180);
+}
+function detail(entry,state) {
+  if (entry.zone) return entry.zone+' · '+entry.capacity+' 人桌 · '+entry.status;
+  if (entry.kind==='category') return '菜品分类 · 排序 '+entry.priority;
+  if (entry.category) return entry.category+' · ¥'+entry.price;
+  if (entry.source==='booking') return entry.status+' · 预选桌台 '+(state.active.find(row=>row.id===entry.tableId)?.name || '—');
+  return entry.status || '—';
+}
+function renderActive() {
+  ++version;
+  $('results').setAttribute('aria-busy','false');
+  const state = load();
+  const items = state.active.filter(entry=>entry.source===page);
+  count(items.length+' 项');
+  $('foot').textContent = '本机演示数据';
+  if (!items.length) return stateMessage(sources[page]?'当前暂无示例记录':'请选择业务模块或回收站体验原型','empty');
+  const multi = page==='booking' || page==='service';
+  const deleteBatch = '<button class="btn danger" id="delete-batch" '+(selected.size?'':'disabled')+'>批量删除</button>';
+  drawTable([...(multi?['选择']:[]),'名称','数据来源','业务信息',multi?deleteBatch:'操作'],items.map(entry=>'<tr>'+
+    (multi?'<td><input type="checkbox" aria-label="选择 '+esc(entry.name)+'" data-select="'+esc(entry.id)+'" '+(selected.has(entry.id)?'checked':'')+'></td>':'')+
+    '<td class="name">'+esc(entry.name)+'</td><td>'+chip(entry.source)+'</td><td>'+esc(detail(entry,state))+'</td>'+
+    '<td><button class="btn danger" data-delete="'+esc(entry.id)+'">删除</button></td></tr>'));
+}
+function renderPage() {
+  const trash = page==='trash', supported = Boolean(sources[page]);
+  $('nav').querySelectorAll('button').forEach(button=>{
+    if (button.dataset.page===page) button.setAttribute('aria-current','page');
+    else button.removeAttribute('aria-current');
+  });
+  $('crumb').innerHTML = '门店管理'+icon('right')+'<strong>'+navigation[page]+'</strong>';
+  $('hero').innerHTML = icon(page);
+  $('title').textContent = navigation[page];
+  $('subtitle').textContent = trash?'查看门店删除记录，按批次还原业务数据。':supported?'使用示例记录体验删除与还原。':'商家端导航预览';
+  $('note').innerHTML = icon('info')+'删除后可在回收站内还原，有效期 30 天。';
+  $('note').hidden = trash || !supported;
+  $('filters').hidden = !trash;
+  $('list-title').textContent = trash?'删除记录':supported?sources[page]+'记录':'模块预览';
+  $('list-head').hidden = trash;
+  if (trash) query();
+  else renderActive();
+}
+
+function calendar() {
+  $('month-label').textContent = month.getFullYear()+' 年 '+(month.getMonth()+1)+' 月';
+  $('ends').innerHTML = ['start','end'].map(key=>'<button data-endpoint="'+key+'" aria-pressed="'+(key===endpoint)+'">'+
+    (key==='start'?'开始 ':'结束 ')+draft[key]+'</button>').join('');
+  const leading = (month.getDay()+6)%7;
+  const days = new Date(month.getFullYear(),month.getMonth()+1,0).getDate();
+  $('calendar').innerHTML = [...'一二三四五六日'].map(day=>'<span>'+day+'</span>').join('')+
+    '<span></span>'.repeat(leading)+Array.from({length:days},(_,i)=>{
+      const date = dateKey(new Date(month.getFullYear(),month.getMonth(),i+1));
+      const chosen = date===draft.start || date===draft.end;
+      const range = date>draft.start && date<draft.end;
+      return '<button class="day '+(date===today?'today ':'')+(chosen?'chosen':range?'range':'')+
+        '" data-date="'+date+'" aria-label="'+date+'" aria-pressed="'+chosen+'">'+(i+1)+'</button>';
+    }).join('');
+}
+function openDates() {
+  const current = new Date();
+  month = new Date(current.getFullYear(),current.getMonth(),1);
+  draft = {...filter};
+  endpoint = 'start';
+  $('date-panel').hidden = false;
+  $('date-button').setAttribute('aria-expanded','true');
+  calendar();
+}
+function closeDates(focus=false) {
+  if ($('date-panel').hidden) return;
+  $('date-panel').hidden = true;
+  $('date-button').setAttribute('aria-expanded','false');
+  if (focus) $('date-button').focus();
+}
+function changeMonth(amount) {
+  month = new Date(month.getFullYear(),month.getMonth()+amount,1);
+  calendar();
+}
+
+function showModal(next,record) {
+  action = next;
+  const restoring = action.type==='restore';
+  $('modal-title').textContent = restoring?'确认还原':'确认删除';
+  $('message').textContent = restoring?'是否确认还原该条记录？':'删除后可在回收站内还原，有效期 30 天';
+  $('summary').innerHTML = '<strong>'+esc(batchName(record))+'</strong><small>'+sources[record.items[0].source]+' · 共 '+record.items.length+' 项</small>';
+  $('error').hidden = $('option').hidden = $('modal-toast').hidden = true;
+  $('confirm').className = 'btn '+(restoring?'primary':'danger');
+  setPending(false);
+  modal.showModal();
+}
+function setPending(value) {
+  pending = value;
+  for (const id of ['confirm','cancel','close','replacement']) $(id).disabled = value;
+  const verb = action.type==='restore'?'还原':'删除';
+  $('confirm').textContent = value?verb+'中…':'确认'+verb;
+}
+function restoreRecord(id,replacement) {
+  const state = load();
+  const record = state.records.find(row=>row.id===id);
+  if (!record) return {toast:'该数据已还原'};
+  const stamp = Date.now();
+  if (record.stamp+TTL<=stamp) return {toast:'该记录已超过 30 天，无法还原'};
+  const first = record.items[0];
+  const tables = state.active.filter(entry=>entry.source==='table');
+  const dishes = state.active.filter(entry=>entry.source==='dish' && entry.kind!=='category');
+  const categories = state.active.filter(entry=>entry.kind==='category');
+  const validCategories = categories.map(entry=>entry.name);
+  if (first.source==='table') {
+    if (tables.some(entry=>entry.name===first.name)) return {error:'当前门店已存在同名桌台，请修改现有桌台名称后再执行还原。'};
+    if (!zones.includes(first.zone) && !zones.includes(replacement)) return {label:'原分区已失效，请选择当前有效分区',choices:zones};
+  }
+  if (first.source==='dish' && first.kind!=='category') {
+    const chinese = dishes.some(entry=>entry.name===first.name);
+    const english = first.english && dishes.some(entry=>entry.english?.toLowerCase()===first.english.toLowerCase());
+    if (chinese || english) {
+      const type = chinese && english?'中文及英文名称':chinese?'中文名称':'英文名称';
+      return {error:'该菜品'+type+'已被门店内其他菜品占用，暂不支持还原，请修改现有菜品名称后重试。'};
+    }
+    if (!validCategories.includes(first.category) && !validCategories.includes(replacement)) {
+      if (!validCategories.length) return {error:'当前没有有效菜品分类，请先创建分类后重试。'};
+      return {label:'原分类已失效，请选择当前有效分类',choices:validCategories};
+    }
+  }
+  if (failRestore) {
+    failRestore = false;
+    throw new Error('Simulated restore error');
+  }
+  for (const entry of record.items) {
+    const restored = {...entry};
+    if (entry.source==='table' && !zones.includes(entry.zone)) restored.zone = replacement;
+    if (entry.source==='dish' && entry.kind==='category') restored.priority = Math.max(0,...categories.map(row=>row.priority))+1;
+    if (entry.source==='dish' && entry.kind!=='category' && !validCategories.includes(entry.category)) restored.category = replacement;
+    if (entry.source==='booking') {
+      if (entry.status==='待就餐' && entry.diningAt<stamp) restored.status = '已超时';
+      if (entry.tableId && !tables.some(row=>row.id===entry.tableId)) restored.tableId = null;
+    }
+    state.active.push(restored);
+  }
+  state.records = state.records.filter(row=>row.id!==id);
+  save(state);
+  return {toast:'已还原该条记录共计'+record.items.length+'项'};
+}
+function deleteRecords(ids) {
+  const state = load();
+  const entries = state.active.filter(entry=>ids.includes(entry.id));
+  if (entries.length!==ids.length) return {toast:'记录已变更，请刷新后重试'};
+  const stamp = Date.now();
+  const id = 'batch-'+stamp+'-'+Math.random().toString(36).slice(2,9);
+  state.records.push(batch(id,entries,stamp,'门店管理员-PC01'));
+  state.active = state.active.filter(entry=>!ids.includes(entry.id));
+  save(state);
+  return {toast:'已移至回收站，共 '+entries.length+' 项'};
+}
+async function submit() {
+  if (pending) return;
+  const restoring = action.type==='restore';
+  const replacement = $('option').hidden?'':$('replacement').value;
+  if (!$('option').hidden && !replacement) {
+    toast('请选择有效选项');
+    $('replacement').focus();
+    return;
+  }
+  $('error').hidden = true;
+  setPending(true);
+  try {
+    await new Promise(resolve=>setTimeout(resolve,300));
+    const result = await mutate(()=>restoring?restoreRecord(action.id,replacement):deleteRecords(action.ids));
+    if (result.choices) {
+      $('option-label').textContent = result.label;
+      $('replacement').innerHTML = '<option value="">请选择</option>'+result.choices.map(choice=>'<option>'+esc(choice)+'</option>').join('');
+      $('option').hidden = false;
+      setPending(false);
+      $('replacement').focus();
+      return;
+    }
+    if (result.error) {
+      $('error').textContent = result.error;
+      $('error').hidden = false;
+      return;
+    }
+    modal.close();
+    toast(result.toast);
+    selected.clear();
+    if (restoring) query();
+    else renderActive();
+  } catch { toast(restoring?'还原失败，请重试':'删除失败，请重试'); }
+  finally { setPending(false); }
+}
+
+$('nav').innerHTML = Object.entries(navigation).map(([key,label])=>'<button data-page="'+key+'" aria-label="'+label+'">'+icon(key)+'<span>'+label+'</span>'+
+  (badges[key]?'<em aria-hidden="true">'+badges[key]+'</em>':'')+'</button>').join('');
+$('source').innerHTML = '<option value="">全部来源</option>'+Object.entries(sources).map(([key,label])=>'<option value="'+key+'">'+label+'</option>').join('');
+$('date-button').innerHTML = icon('booking')+'<span id="date-value"></span>'+icon('down');
+for (const [id,key] of Object.entries({prev:'left',next:'right',close:'close'})) $(id).innerHTML = icon(key);
+$('nav').onclick = event=>{
+  const button = event.target.closest('[data-page]');
+  if (!button || pending) return;
+  page = button.dataset.page;
+  selected.clear();
+  closeDates();
+  renderPage();
+};
+$('source').onchange = event=>{ filter.source = event.target.value; query(); };
+$('date-button').onclick = ()=>$('date-panel').hidden?openDates():closeDates(true);
+$('prev').onclick = ()=>changeMonth(-1);
+$('next').onclick = ()=>changeMonth(1);
+$('ends').onclick = event=>{
+  const button = event.target.closest('[data-endpoint]');
+  if (!button) return;
+  endpoint = button.dataset.endpoint;
+  calendar();
+  $('ends').querySelector('[aria-pressed="true"]').focus();
+};
+$('calendar').onclick = event=>{
+  const button = event.target.closest('[data-date]');
+  if (!button) return;
+  const date = button.dataset.date;
+  draft[endpoint] = date;
+  if (endpoint==='start') endpoint = 'end';
+  calendar();
+  $('calendar').querySelector('[data-date="'+date+'"]').focus();
+};
+$('date-cancel').onclick = ()=>closeDates(true);
+$('date-confirm').onclick = ()=>{
+  if (draft.start>draft.end) return toast('开始日期不可晚于结束日期',1000);
+  Object.assign(filter,draft);
+  closeDates(true);
+  query();
+};
+document.addEventListener('click',event=>{
+  if (!$('date-wrap').contains(event.target) && !event.composedPath().includes($('date-wrap'))) closeDates();
+});
+document.addEventListener('keydown',event=>{
+  if (event.key==='Escape') closeDates(true);
+});
+$('results').onclick = event=>{
+  const button = event.target.closest('button');
+  if (!button) return;
+  if (button.dataset.restore) {
+    const record = load().records.find(row=>row.id===button.dataset.restore);
+    if (record) showModal({type:'restore',id:record.id},record);
+    else { toast('该数据已还原'); query(); }
+  }
+  if (button.dataset.delete || button.id==='delete-batch') {
+    const ids = button.dataset.delete?[button.dataset.delete]:[...selected];
+    const items = load().active.filter(entry=>ids.includes(entry.id));
+    if (items.length) showModal({type:'delete',ids:items.map(entry=>entry.id)},{items});
+  }
+};
+$('results').onchange = event=>{
+  const id = event.target.dataset.select;
+  if (!id) return;
+  if (event.target.checked) selected.add(id);
+  else selected.delete(id);
+  $('delete-batch').disabled = selected.size===0;
+};
+$('close').onclick = $('cancel').onclick = ()=>modal.close();
+$('confirm').onclick = submit;
+modal.addEventListener('cancel',event=>{ if (pending) event.preventDefault(); });
+window.addEventListener('storage',event=>{
+  if (event.key!==storeKey || modal.open) return;
+  selected.clear();
+  if (page==='trash') query();
+  else renderActive();
+});
+setInterval(()=>{
+  if (page!=='trash') return;
+  const stamp = Date.now();
+  const cells = [...$('results').querySelectorAll('[data-expiry]')];
+  if (!modal.open && cells.some(cell=>Number(cell.dataset.expiry)<=stamp)) return query();
+  for (const cell of cells) {
+    const ttl = Number(cell.dataset.expiry)-stamp;
+    cell.textContent = remaining(ttl);
+    cell.classList.toggle('soon',ttl<DAY);
+  }
+},30000);
+renderPage();
+</script>
+</body>
+</html>
