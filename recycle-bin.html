@@ -19,6 +19,7 @@ dialog{width:min(440px,calc(100vw - 28px));border:1px solid var(--line);border-r
 @media(max-width:980px){.shell{grid-template-columns:175px minmax(0,1fr)}.side{padding-inline:8px}.logo strong{font-size:13px}nav button{padding-inline:8px}}
 @media(max-width:700px){.shell{grid-template-columns:52px minmax(0,1fr)}.side{padding:12px 4px}.logo{justify-content:center;margin-bottom:15px}.logo b{width:32px;height:32px}.logo div,nav span,nav em,.version,.sort{display:none}nav button{justify-content:center;padding:7px 0;min-height:37px}main{padding:12px 10px;gap:11px}.hero{width:39px;height:39px}h1{font-size:23px}.filters,.list-head,.foot{padding-inline:10px}.calendar-panel{left:-7px}.note{align-items:flex-start}}
 .foot:empty{display:none}.foot-count{margin-inline-start:auto}
+.top .demo{margin-inline-start:auto}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
 </style>
 </head>
@@ -29,8 +30,8 @@ dialog{width:min(440px,calc(100vw - 28px));border:1px solid var(--line);border-r
   <nav id="nav" aria-label="商家端导航"></nav><div class="version">FKM 商家端 · V1.7</div>
 </aside>
 <main>
-  <div class="top"><div id="crumb"></div><span class="demo">原型演示</span></div>
-  <header class="heading"><div class="hero" id="hero"></div><div><h1 id="title">回收站</h1><p id="subtitle"></p></div></header>
+  <div class="top"><div id="crumb" hidden></div><span class="demo">原型演示</span></div>
+  <header class="heading"><div class="hero" id="hero" aria-hidden="true" hidden></div><div><h1 id="title">回收站</h1><p id="subtitle"></p></div></header>
   <div class="note" id="note" hidden></div>
   <section class="card filters" id="filters" aria-label="筛选删除记录">
     <label class="field">数据来源<select class="control" id="source"></select></label>
@@ -248,8 +249,9 @@ function renderPage() {
     if (button.dataset.page===page) button.setAttribute('aria-current','page');
     else button.removeAttribute('aria-current');
   });
-  $('crumb').innerHTML = '门店管理'+icon('right')+'<strong>'+navigation[page]+'</strong>';
-  $('hero').innerHTML = icon(page);
+  $('crumb').hidden = $('hero').hidden = trash;
+  $('crumb').innerHTML = trash?'':'门店管理'+icon('right')+'<strong>'+navigation[page]+'</strong>';
+  $('hero').innerHTML = trash?'':icon(page);
   $('title').textContent = navigation[page];
   $('subtitle').textContent = trash?'查看门店删除记录，按批次还原业务数据。':supported?'使用示例记录体验删除与还原。':'商家端导航预览';
   $('note').innerHTML = icon('info')+'删除后可在回收站内还原，有效期 30 天。';
